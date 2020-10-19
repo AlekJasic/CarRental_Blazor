@@ -1,0 +1,164 @@
+﻿@using CarRental.Model;
+
+@inject IVehicleFilters Filters
+
+@if (CurrentVehicle != null)
+{
+<div class="row vehicle-detail">
+    <div class="@Columns.EditColumn text-left">
+        <a title="Edit" href="/edit/@CurrentVehicle?.Id">
+            📝
+        </a>
+        @if (CanDelete)
+        {
+            <span @onclick="async () => await DeleteRequestAsync()" title="Delete"
+                  class="d-none d-sm-inline clickable red">
+                ❌
+            </span>
+        }
+        else
+        {
+            <span>&nbsp;</span>
+        }
+        @if (CanReturnVehicle)
+        {
+            <a href="/vehicle/edit/@CurrentVehicle.LicenseNumber" title="Return vehicle">
+                <img class="img-yellow" src="returnVehicle.png">
+            </a>
+        }
+        else
+        {
+            <span>&nbsp;</span>
+        }
+        &nbsp;
+    </div>
+    <div class="@Columns.GetClassForColumn(VehicleFilterColumns.LicenseNumber)">
+        <a class="vehicle-view" href="@ViewLink" alt="View Details" title="View Details">
+            @CurrentVehicle.LicenseNumber
+        </a>
+    </div>
+    @if (!DeleteConfirmation)
+    {
+        <div class="@Columns.GetClassForColumn(VehicleFilterColumns.Brand)">
+            @CurrentVehicle.Brand
+        </div>
+        <div class="@Columns.GetClassForColumn(VehicleFilterColumns.Model)">
+            @CurrentVehicle.Model
+        </div>
+        
+        <div class="@Columns.GetClassForColumn(VehicleFilterColumns.Mileage)">
+            @CurrentVehicle.Mileage
+        </div>
+        <div class="@Columns.GetClassForColumn(VehicleFilterColumns.RegistrationDate)">
+            @regDateFormated
+        </div>
+        <div class="col">
+            @CurrentVehicle.ClientId
+        </div>
+    }
+    else
+    {
+        <div class="@Columns.DeleteConfirmation">
+            <DeletePrompt Confirmation="ConfirmAsync" />
+        </div>
+    }
+</div>
+}
+@code {
+    /// <summary>
+    /// Map classes to columns.
+    /// </summary>
+    public ColumnService Columns = new ColumnService();
+
+    /// <summary>
+    /// The <see cref="Vehicle"/> being rendered.
+    /// </summary>
+    [Parameter]
+    public Vehicle CurrentVehicle { get; set; }
+
+    /// <summary>
+    /// The <see cref="GridWrapper"/> reference.
+    /// </summary>
+    [CascadingParameter]
+    public GridWrapper Wrapper { get; set; }
+
+    private DateTime regDate => DateTime.Parse(CurrentVehicle.RegistrationDate);
+
+    private string regDateFormated => regDate.ToString("dd.MM.yyyy");
+
+    /// <summary>
+    /// Delegate to delete the <see cref="Vehicle"/>.
+    /// </summary>
+    [Parameter]
+    public EventCallback<Vehicle> DeleteVehicle { get; set; }
+
+    public bool CanDelete => !DeleteConfirmation &&
+        (Wrapper.DeleteRequestId == 0 || Wrapper.DeleteRequestId == CurrentVehicle?.Id);
+
+    public bool CanReturnVehicle => CurrentVehicle.ClientId != null;
+
+    /// <summary>
+    /// Navigation to view.
+    /// </summary>
+    public string ViewLink => $"vehicle/view/{CurrentVehicle.LicenseNumber}";
+
+    /// <summary>
+    /// Confirm the delete.
+    /// </summary>
+    public bool DeleteConfirmation { get; set; }
+
+    /// <summary>
+    /// Track changes
+    /// </summary>
+    private int _lastVehicle = -1;
+
+    /// <summary>
+    /// Reset when new vehicle is attached
+    /// </summary>
+    protected override void OnParametersSet()
+    {
+        if (CurrentVehicle != null && CurrentVehicle.Id != _lastVehicle)
+        {
+            _lastVehicle = CurrentVehicle.Id;
+            DeleteConfirmation = false;
+        }
+        base.OnParametersSet();
+    }
+
+    /// <summary>
+    /// Called based on confirmation.
+    /// </summary>
+    /// <param name="confirmed"><c>True</c> when confirmed</param>
+    /// <returns>A <see cref="Task"/>.</returns>
+    public async Task ConfirmAsync(bool confirmed)
+    {
+        if (confirmed)
+        {
+            await DeleteAsync();
+        }
+        else
+        {
+            DeleteConfirmation = false;
+            await Wrapper.DeleteRequested.InvokeAsync(0);
+        }
+    }
+
+    /// <summary>
+    /// Set delete to true.
+    /// </summary>
+    public Task DeleteRequestAsync()
+    {
+        DeleteConfirmation = true;
+        return Wrapper.DeleteRequested.InvokeAsync(CurrentVehicle.Id);
+    }
+
+    /// <summary>
+    /// Deletes the <see cref="Vehicle"/>.
+    /// </summary>
+    /// <returns>A <see cref="Task"/>.</returns>
+    private Task DeleteAsync()
+    {
+        return DeleteVehicle.InvokeAsync(CurrentVehicle);
+    }
+
+}

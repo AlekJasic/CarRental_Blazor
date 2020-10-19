@@ -1,0 +1,31 @@
+﻿@inject IStringLocalizer<App> Localize
+
+<div class="vehicle-summary">
+    <h3 class="vehicle">
+        <span class="make">@Vehicle.Brand</span>
+        <span class="model">@Vehicle.Model</span>
+        <span class="year">@Vehicle.RegistrationDate.Year</span>
+    </h3>
+    <div class="vehicle-summary-fields">
+        <span>@Localize["Mileage:"]</span>
+        <InputNumber @bind-Value="@Vehicle.Mileage" pattern="[0-9]*" inputmode="numeric" disabled="@disabled" />
+
+        <span>@Localize["Tank:"]</span>
+        <InputSelect @bind-Value="@Vehicle.Tank" disabled="@disabled"> 
+            <option value="@FuelLevel.Empty">@Localize["Empty"]</option>
+            <option value="@FuelLevel.Quarter">25%</option>
+            <option value="@FuelLevel.Half">@Localize["Half"]</option>
+            <option value="@FuelLevel.ThreeQuarters">75%</option>
+            <option value="@FuelLevel.Full">@Localize["Full"]</option>
+        </InputSelect>
+        <span>@Localize["Client ID:"]</span>
+        <InputNumber @bind-Value="@Vehicle.ClientId" pattern="[0-9]*" inputmode="numeric" disabled />
+    </div>
+    <ValidationSummary />
+</div>
+
+@code {
+    [Parameter] public Vehicle Vehicle { get; set; }
+    [Parameter] public string Mode { get; set; }
+    private bool disabled => Mode == "view";
+}

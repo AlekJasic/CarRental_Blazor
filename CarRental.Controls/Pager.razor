@@ -1,0 +1,36 @@
+﻿@using CarRental.Model;
+
+@inject IPageHelper PageHelper
+@inject IVehicleFilters Filters
+
+<div class="row">
+    <div class="col-12 col-sm-6 col-lg-8 col-xl-9 p-1">
+
+        <a disabled="@(Filters.Loading || !PageHelper.HasPrev)" class="oi oi-chevron-left @Disabled(PageHelper.HasPrev)"
+           href="/@PageHelper.PrevPage">
+            &nbsp;&nbsp;
+        </a>
+        @PageHelper.Page...@PageHelper.PageCount
+        &nbsp;&nbsp;
+        <a disabled="@(Filters.Loading || !PageHelper.HasNext)" class="oi oi-chevron-right @Disabled(PageHelper.HasNext)"
+           href="/@PageHelper.NextPage">
+        </a>
+        @PageHelper.PageItems of
+        @PageHelper.TotalItemCount
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// This will force refresh on changes.
+    /// </summary>
+    [CascadingParameter]
+    public GridWrapper Wrapper { get; set; }
+
+    /// <summary>
+    /// Emit the disabled class as needed.
+    /// </summary>
+    /// <param name="flag">The flag to test.</param>
+    /// <returns>"disabled" or empty string.</returns>
+    public string Disabled(bool flag) => Filters.Loading || !flag ? "disabled" : string.Empty;
+}

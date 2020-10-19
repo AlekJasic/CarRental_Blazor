@@ -1,0 +1,28 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@inject NavigationManager Navigation
+@inject SignOutSessionStateManager SignOutManager
+@inject IStringLocalizer<App> Localize
+
+<AuthorizeView>
+    <Authorized>
+        
+            <div class="title">@Localize["Welcome, {0}!   ", context.User.FirstName()]</div>
+            <div class="toolbar">
+                <label class="toolbar-item" @onclick="() => loginStatusOverlay.Show()">&nbsp;&nbsp;&nbsp;☰&nbsp;&nbsp;</label>
+            </div>
+
+        <Overlay @ref="loginStatusOverlay" OverlayStyle="Overlay.Style.Top" CssClass="home-overlay">
+            <LoginStatus />
+        </Overlay>
+    </Authorized>
+    <NotAuthorized>
+        <a href="authentication/register">Register</a>
+        <a href="authentication/login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code { 
+    Overlay loginStatusOverlay;
+}

@@ -1,0 +1,42 @@
+﻿@layout MainLayout
+@page "/"
+@page "/{Page:int}"
+
+@using Microsoft.AspNetCore.Authorization
+@using CarRental.BaseRepository
+@using CarRental.Model
+@using CarRental.Controls
+
+@attribute [Authorize]
+
+<Overlay @ref="loginStatusOverlay" OverlayStyle="Overlay.Style.Top" CssClass="home-overlay">
+    <LoginStatus />
+</Overlay>
+
+<ListControl Page="Page"
+             FetchVehiclesAsync="(repo, vehicles) => FetchAsync(repo, vehicles)" />
+
+<footer>
+    <SyncStatus />
+</footer>
+
+@code { /// <summary>
+    /// Allow route-based navigation.
+    /// </summary>
+    [Parameter]
+    public int Page { get; set; }
+
+    Overlay loginStatusOverlay;
+
+    /// <summary>
+    /// Pass in the actual work so this can be reused between client and server
+    /// </summary>
+    /// <param name="repo">The <see cref="IBasicRepository{CarRental.Model.Vehicle}"/> to use.</param>
+    /// <param name="vehicles">How to handle the returned <see cref="ICollection{CarRental.Model.Vehicle}"/>.</param>
+    /// <returns>A <see cref="Task"/></returns>
+    public async Task FetchAsync(IBasicRepository<CarRental.Model.Vehicle> repo,
+    Action<ICollection<CarRental.Model.Vehicle>> vehicles)
+    {
+        vehicles((await repo.GetListAsync()).ToList());
+    }
+}

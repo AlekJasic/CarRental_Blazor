@@ -1,0 +1,169 @@
+﻿@using CarRental.BaseRepository;
+@using CarRental.Model;
+@using System.Security.Claims;
+
+@inject ClaimsPrincipal User
+@inject IBasicRepository<Vehicle> Repo
+@inject NavigationManager Nav
+@inject IVehicleFilters Filters
+@inject GridQueryAdapter QueryAdapter
+
+<h1>Vehicles</h1>
+<GridWrapper @ref="Wrapper"
+             FilterChanged="async () => await ReloadAsync()"
+             DeleteRequested="id => Wrapper.DeleteRequestId = id">
+    <div class="container-fluid vehicles-grid">
+        <div class="row">
+            <div class="col-12 col-sm-6 col-md-8 col-lg-9 p-1">
+                <TextFilter />
+            </div>
+        </div>
+        <div class="row">&nbsp;</div>
+        <Pager/>
+        <div class="row">&nbsp;</div>
+        <VehicleListHeader />
+        @if (Filters.Loading || Vehicles == null)
+        {
+            <div class="row">
+                <div class="col-12 alert alert-info">
+                    Loading ...
+                </div>
+            </div>
+        }
+        @if (Vehicles != null && Vehicles.Count == 0)
+        {
+            <div class="row">
+                <div class="col-12 alert alert-warning">
+                    No vehicles found.
+                </div>
+            </div>
+        }
+        @if (Vehicles != null && Vehicles.Count > 0)
+        {
+            @foreach (var vehicle in Vehicles)
+            {
+                <VehicleListRow CurrentVehicle="@vehicle"
+                                DeleteVehicle="@(async c => await DeleteVehicleAsync(c))" />
+            }
+        }
+    </div>
+</GridWrapper>
+
+@code {
+    /// <summary>
+    /// Reference to the wrapper
+    /// </summary>
+    public GridWrapper Wrapper { get; set; }
+
+    /// <summary>
+    /// The <see cref="ICollection{Vehicle}"/> to expose on the page.
+    /// </summary>
+    public ICollection<Vehicle> Vehicles { get; set; }
+
+    private int _lastPage = -1;
+
+    /// <summary>
+    /// Allow route-based navigation.
+    /// </summary>
+    [Parameter]
+    public int Page
+    {
+        get => Filters.PageHelper.Page;
+        set
+        {
+            Filters.PageHelper.Page = value;
+        }
+    }
+
+    /// <summary>
+    /// This delegate requests the collection refresh so it can be handled
+    /// appropriately on client vs. server.
+    /// </summary>
+    [Parameter]
+    public Func<IBasicRepository<Vehicle>, Action<ICollection<Vehicle>>, Task> FetchVehiclesAsync { get; set; }
+
+    /// <summary>
+    /// Initial load.
+    /// </summary>
+    /// <param name="firstRender"><c>True</c> on first render.</param>
+    /// <returns>A <see cref="Task"/>.</returns>
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (_lastPage < 1)
+        {
+            Nav.NavigateTo("/1");
+            return;
+        }
+
+        if (Filters.PageHelper.PageCount > 0)
+        {
+            if (Page < 1)
+            {
+                Nav.NavigateTo("/1");
+                return;
+            }
+
+            if (Page > Filters.PageHelper.PageCount)
+            {
+                Nav.NavigateTo($"/{Filters.PageHelper.PageCount}");
+                return;
+            }
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    /// <summary>
+    /// Navigation occurred.
+    /// </summary>
+    /// <returns>A <see cref="Task"/>.</returns>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Page != _lastPage)
+        {
+            _lastPage = Page;
+
+            // refresh based on new page
+            await ReloadAsync();
+        }
+        await base.OnParametersSetAsync();
+    }
+
+    /// <summary>
+    /// Loads the current page.
+    /// </summary>
+    /// <returns>A <see cref="Task"/>.</returns>
+    private async Task ReloadAsync()
+    {
+        // already in progress, don't duplicate
+        if (Filters.Loading || Page < 1)
+        {
+            return;
+        }
+
+        Filters.Loading = true;
+
+        if (Wrapper != null)
+        {
+            Wrapper.DeleteRequestId = 0;
+        }
+
+        Vehicles = null;
+        await FetchVehiclesAsync(Repo, vehicles => Vehicles = vehicles);
+
+        Filters.Loading = false;
+    }
+
+    /// <summary>
+    /// Logic to delete the <see cref="Vehicle"/>.
+    /// </summary>
+    /// <param name="vehicle">The <see cref="Vehicle"/> to delete.</param>
+    /// <returns>A <see cref="Task"/>.</returns>
+    public async Task DeleteVehicleAsync(Vehicle vehicle)
+    {
+        Filters.Loading = true;
+        await Repo.DeleteAsync(vehicle.Id, User);
+        Filters.Loading = false;
+        await ReloadAsync();
+    }
+}

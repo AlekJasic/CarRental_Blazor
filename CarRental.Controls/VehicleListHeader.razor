@@ -1,0 +1,60 @@
+﻿@inject IVehicleFilters Filters
+@using CarRental.Model
+
+<div class="row vehicle-header">
+    <div class="@Columns.EditColumn">&nbsp;</div>
+    <div class="@Columns.GetClassForColumn(VehicleFilterColumns.LicenseNumber)"
+         @onclick="@(async ()=>await ToggleAsync(VehicleFilterColumns.LicenseNumber))">
+        <SortIndicator Column="@(VehicleFilterColumns.LicenseNumber)" /> License number
+    </div>
+    <div class="@Columns.GetClassForColumn(VehicleFilterColumns.Brand)"
+         @onclick="@(async()=>await ToggleAsync(VehicleFilterColumns.Brand))">
+        <SortIndicator Column="@(VehicleFilterColumns.Brand)" /> Brand
+    </div>
+    <div class="@Columns.GetClassForColumn(VehicleFilterColumns.Model)"
+         @onclick="@(async()=>await ToggleAsync(VehicleFilterColumns.Model))">
+        <SortIndicator Column="@(VehicleFilterColumns.Model)" /> Model
+    </div>
+
+    <div class="@Columns.GetClassForColumn(VehicleFilterColumns.Mileage)"
+         @onclick="@(async ()=>await ToggleAsync(VehicleFilterColumns.Mileage))">
+        <SortIndicator Column="@(VehicleFilterColumns.Mileage)" /> Mileage
+    </div>
+    <div class="@Columns.GetClassForColumn(VehicleFilterColumns.RegistrationDate)"
+         @onclick="@(async ()=>await ToggleAsync(VehicleFilterColumns.RegistrationDate))">
+        <SortIndicator Column="@(VehicleFilterColumns.RegistrationDate)" /> Registration date
+    </div>
+    <div class="col">
+        Client ID
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// The <see cref="GridWrapper"/> reference.
+    /// </summary>
+    [CascadingParameter]
+    public GridWrapper Wrapper { get; set; }
+
+    /// <summary>
+    /// Column service
+    /// </summary>
+    public ColumnService Columns = new ColumnService();
+
+    /// <summary>
+    /// Either starting a new sort or toggling ascending/descending for the current.
+    /// </summary>
+    /// <param name="col">The <see cref="VehicleFilterColumns"/> being toggled.</param>
+    public Task ToggleAsync(VehicleFilterColumns col)
+    {
+        if (Filters.SortColumn == col)
+        {
+            Filters.SortAscending = !Filters.SortAscending;
+        }
+        else
+        {
+            Filters.SortColumn = col;
+        }
+        return Wrapper.FilterChanged.InvokeAsync(this);
+    }
+}

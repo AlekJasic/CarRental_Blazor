@@ -1,0 +1,21 @@
+﻿@layout MainLayout
+@page "/edit/{VehicleId:int}"
+
+@inherits OwningComponentBase<IUnitOfWork<CarRental.Model.Vehicle>>
+
+@using CarRental.BaseRepository
+
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+
+<EditVehicleControl VehicleId="@VehicleId" Service="Service" />
+
+@code {
+
+    /// <summary>
+    /// Id of <see cref="Vehicle"/> to edit.
+    /// </summary>
+    [Parameter]
+    public int VehicleId { get; set; }
+}
